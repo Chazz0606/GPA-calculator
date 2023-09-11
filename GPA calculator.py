@@ -1,17 +1,115 @@
-chiScr=int(input("Chinese score:"))
-mScr=int(input("Math score:"))
-eScr=int(input("English score:"))
-hScr=int(input("History score:"))
-pScr=int(input("Physics score:"))
-cheScr=int(input("Chemistry score:"))
-oScr=int(input("IT/Bio/Geo score:"))
-chiLv=input("Chinese level:(enter H/S/non-native)")
-mLv=input("Math level:(enter HLM/H/S+/S)")
-eLv=input("English level:(enter H+/H/S+/S)")
-hLv=input("History level:(enter H/S+/S)")
-pLv=input("Physics level:(enter H/S+/S)")
-cheLv=input("Chemistry level:(enter H/S+/S)")
-oLv=input("IT/Bio/Geo level:(enter H/S)")
+chiScr=input("Chinese score:")
+while chiScr.isdigit()==False:
+    chiScr=input("Please enter again:")
+chiScr=int(chiScr)
+
+mScr=input("Math score:")
+while mScr.isdigit()==False:
+    mScr=input("Please enter again:")
+mScr=int(mScr)
+
+eScr=input("English score:")
+while eScr.isdigit()==False:
+    eScr=input("Please enter again:")
+eScr=int(eScr)
+
+hScr=input("History score:")
+while hScr.isdigit()==False:
+    hScr=input("Please enter again:")
+hScr=int(hScr)
+
+pScr=input("Physics score:")
+while pScr.isdigit()==False:
+    pScr=input("Please enter again:")
+pScr=int(pScr)
+
+cheScr=input("Chemistry score:")
+while cheScr.isdigit()==False:
+    cheScr=input("Please enter again:")
+cheScr=int(cheScr)
+
+oScr=input("IT/Bio/Geo score:")
+while oScr.isdigit()==False:
+    oScr=input("Please enter again:")
+oScr=int(oScr)
+
+
+chiLv=input("Chinese level:")
+if chiLv=="H" or chiLv=="h":
+    chiLv="H"
+elif chiLv=="S" or chiLv=="s":
+    chiLv="S"
+elif chiLv=="non-native" or chiLv=="nonnative" or chiLv=="Nonnative" or chiLv=="Non-native" or chiLv=="Non-Native":
+    chiLv="non-native"
+else:
+    while chiLv!="S" and chiLv!="s" and chiLv!="H" and chiLv!="h" and chiLv!="non-native" and chiLv!="nonnative" and chiLv!="Nonnative" and chiLv!="Non-native" and chiLv!="Non-Native":
+        chiLv=input("Please enter again:")
+
+mLv=input("Math level:")
+if mLv=="H" or mLv=="h" or mLv=="HLM" or mLv=="Hlm" or mLv=="hlm":
+    mLv="H"
+elif mLv=="S+" or mLv=="s+":
+    mLv="S+"
+elif mLv=="S" or mLv=="s":
+    mLv="S"
+else:
+    while mLv!="H" and mLv!="h" and mLv!="S+" and mLv!="s+" and mLv!="S" and mLv!="s" and mLv!="HLM" and mLv!="Hlm" and mLv!="hlm":
+        mLv=input("Please enter again:")
+
+eLv=input("English level:")
+if eLv=="H+" or eLv=="h+":
+    eLv="H+"
+elif eLv=="H" or eLv=="h":
+    eLv="H"
+elif eLv=="S+" or eLv=="s+":
+    eLv="S+"
+elif eLv=="S" or eLv=="s":
+    eLv="S"
+else:
+    while eLv!="H+" and eLv!="h+" and eLv!="H" and eLv!="h" and eLv!="S+" and eLv!="s+" and eLv!="S" and eLv!="s":
+        eLv=input("Please enter again:")
+
+hLv=input("History level:")
+if hLv=="H" or hLv=="h":
+    hLv="H"
+elif hLv=="S+" or hLv=="s+":
+    hLv="S+"
+elif hLv=="S" or hLv=="s":
+    hLv="S"
+else:
+    while hLv!="H" and hLv!="h" and hLv!="S+" and hLv!="s+" and hLv!="S" and hLv!="s":
+        hLv=input("Please enter again:")
+
+pLv=input("Physics level:")
+if pLv=="H" or pLv=="h":
+    pLv="H"
+elif pLv=="S+" or pLv=="s+":
+    pLv="S+"
+elif pLv=="S" or pLv=="s":
+    pLv="S"
+else:
+    while pLv!="H" and pLv!="h" and pLv!="S+" and pLv!="s+" and pLv!="S" and pLv!="s":
+        pLv=input("Please enter again:")
+        
+cheLv=input("Chemistry level:")
+if cheLv=="H" or cheLv=="h":
+    cheLv="H"
+elif cheLv=="S+" or cheLv=="s+":
+    cheLv="S+"
+elif cheLv=="S" or cheLv=="s":
+    cheLv="S"
+else:
+    while cheLv!="H" and cheLv!="h" and cheLv!="S+" and cheLv!="s+" and cheLv!="S" and cheLv!="s":
+        cheLv=input("Please enter again:")
+        
+oLv=input("IT/Bio/Geo level:")
+if oLv=="H" or oLv=="h":
+    oLv="H"
+elif oLv=="S" or oLv=="s":
+    oLv="S"
+else:
+    while oLv!="H" and oLv!="h" and oLv!="S" and oLv!="s":
+        oLv=input("Please enter again:")
 chiClsTime=3
 mClsTime=6
 eClsTime=6.5
