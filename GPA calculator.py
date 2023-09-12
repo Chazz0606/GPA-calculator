@@ -23,36 +23,35 @@ def stdScr(sbj,scr):
 
 #function to input and standardize level
 def stdLv(sbj,lv):
-    if lv=="H+" or lv=="h+":
-        lv="H+"
-    elif lv=="H" or lv=="h" or lv=="HLM" or lv=="hlm" or lv=="素养班" or lv=="素养":
-        lv="H"
-    elif lv=="S+" or lv=="s+":
-        lv="S+"
-    elif lv=="S" or lv=="s" or lv=="non-native" or lv=="nonnative" or lv=="Nonnative" or lv=="Non-native" or lv=="Non-Native":
-        lv="S"
-    else:
-        while lv!="S" and lv!="s" and lv!="S+" and lv!="s+" and lv!="H" and lv!="h" and lv!="素养班" and lv!="素养"and lv!="HLM" and lv!="hlm" and lv!="H+" and lv!="h+" and lv!="non-native" and lv!="nonnative" and lv!="Nonnative" and lv!="Non-native" and lv!="Non-Native":
-            lv=input("Please enter "+sbj+" level again:")
-    return lv
+    if lv=="HLM" or lv=="hlm" or lv=="素养班" or lv=="素养":
+        return "H"
+    return lv.upper()
 
 #function to standardize level
 def digitLv(lv):
-    if lv=="H+":
-        return 1
-    elif lv=="H":
+    if lv=="S":
         return 0
     elif lv=="S+":
-        return -1
-    else:
-        return -2
+        return 1
+    elif lv=="H":
+        return 2
     
 #calculate subject GPA
-def sbjGpa(scr,lv):
-    if scr==-7:
-        return 0
+def sbjGpa(sbj,score,level):
+    if sbj=="Chinese" or sbj=="English":
+        if score==-7:
+            return 0
+        elif score==-6:
+            return 3.9+0.1*level+0.3*score
+        else:
+            return 4+0.1*level+0.3*score
     else:
-        return 4.3+0.15*lv+0.3*scr
+        if score==-7:
+            return 0
+        elif score==-6:
+            return 3.9+0.15*level+0.3*score
+        else:
+            return 4+0.15*level+0.3*score
 
 #create dictionaries
 chinese={}
@@ -92,6 +91,31 @@ physics["level"]=stdLv("Physics",physics["level"])
 chemistry["level"]=stdLv("Chemistry",chemistry["level"])
 elective["level"]=stdLv("Elective",elective["level"])
 
+#digitalize level
+if chinese["level"]=="I" or chinese["level"]=="II":
+    chinese["level"]=0
+elif chinese["level"]=="III" or chinese["level"]=="IV":
+    chinese["level"]=1
+elif chinese["level"]=="V" or chinese["level"]=="VI" or chinese["level"]=="VII" or chinese["level"]=="S":
+    chinese["level"]=2
+elif chinese["level"]=="H":
+    chinese["level"]=3
+
+if english["level"]=="S":
+    english["level"]=0
+elif english["level"]=="S+":
+    english["level"]=1
+elif english["level"]=="H":
+    english["level"]=3
+elif english["level"]=="H+":
+    chinese["level"]=4
+
+math["level"]=digitLv(math["level"])
+history["level"]=digitLv(history["level"])
+physics["level"]=digitLv(physics["level"])
+chemistry["level"]=digitLv(chemistry["level"])
+elective["level"]=digitLv(elective["level"])
+              
 #standardize score
 chinese["score"]=stdScr("Chinese",chinese["score"])
 math["score"]=stdScr("Math",math["score"])
@@ -101,39 +125,14 @@ physics["score"]=stdScr("Physics",physics["score"])
 chemistry["score"]=stdScr("Chemistry",chemistry["score"])
 elective["score"]=stdScr("Elective",elective["score"])
 
-#standardize level
-if chinese["level"]=="H":
-    chinese["level"]=0
-else:
-    chinese["level"]=-1
-
-if elective["level"]=="H":
-    elective["level"]=0
-else:
-    elective["level"]=-1
-
-math["level"]=digitLv(math["level"])
-english["level"]=digitLv(english["level"])
-history["level"]=digitLv(history["level"])
-physics["level"]=digitLv(physics["level"])
-chemistry["level"]=digitLv(chemistry["level"])
-
 #find GPA for each subject
-if chinese["score"]==-7:
-    chinese["gpa"]=0
-else:
-    chinese["gpa"]=4.3+0.1*chinese["level"]+0.3*chinese["score"]
-    
-if elective["score"]==-7:
-    elective["gpa"]=0
-else:
-    elective["gpa"]=4.3+0.1*elective["level"]+0.3*elective["score"]
-    
-math["gpa"]=sbjGpa(math["score"],math["level"])
-english["gpa"]=sbjGpa(english["score"],english["level"])
-history["gpa"]=sbjGpa(history["score"],history["level"])
-physics["gpa"]=sbjGpa(physics["score"],physics["level"])
-chemistry["gpa"]=sbjGpa(chemistry["score"],chemistry["level"])
+chinese["gpa"]=sbjGpa("Chinese",chinese["score"],chinese["level"])   
+math["gpa"]=sbjGpa("Math",math["score"],math["level"])
+english["gpa"]=sbjGpa("English",english["score"],english["level"])
+history["gpa"]=sbjGpa("History",history["score"],history["level"])
+physics["gpa"]=sbjGpa("Physics",physics["score"],physics["level"])
+chemistry["gpa"]=sbjGpa("Chemistry",chemistry["score"],chemistry["level"])
+elective["gpa"]=sbjGpa("Elective",elective["score"],elective["level"])
 
 #final result
 gpa=chinese["gpa"]*chinese["classTime"]+math["gpa"]*math["classTime"]+english["gpa"]*english["classTime"]+history["gpa"]*history["classTime"]+physics["gpa"]*physics["classTime"]+chemistry["gpa"]*chemistry["classTime"]+elective["gpa"]*elective["classTime"]
