@@ -1,3 +1,5 @@
+import pandas as pd
+
 #function to input and standardize score
 def stdScr(scr):
     if scr>=92.5:
@@ -37,64 +39,42 @@ def findGpa(sbj,lv,scr):
         return englishGpa[lv][scr]
     else:
         return nonLanguageGpa[lv][scr]
-    
-#create subject dictionaries and list
-level={}
-score={}
-credit={}
-gpa={}
-sbjList=[]
 
 #subject GPA dictionaries
-chineseGpa={"H":{1:4.3, 2:4.0, 3:3.7, 4:3.4, 5:3.1, 6:2.8, 7:2.4, 8:0},
-         "S":{1:4.2, 2:3.9, 3:3.6, 4:3.3, 5:3.0, 6:2.7, 7:2.3, 8:0},
-         "III":{1:4.1, 2:3.8, 3:3.5, 4:3.2, 5:2.9, 6:2.6, 7:2.2, 8:0},
-         "I":{1:4.0, 2:3.7, 3:3.4, 4:3.1, 5:2.8, 6:2.5, 7:2.1, 8:0}}
+chineseGpa=pd.DataFrame({"H":{1:4.3, 2:4.0, 3:3.7, 4:3.4, 5:3.1, 6:2.8, 7:2.4, 8:0},
+                         "S":{1:4.2, 2:3.9, 3:3.6, 4:3.3, 5:3.0, 6:2.7, 7:2.3, 8:0},
+                         "III":{1:4.1, 2:3.8, 3:3.5, 4:3.2, 5:2.9, 6:2.6, 7:2.2, 8:0},
+                         "I":{1:4.0, 2:3.7, 3:3.4, 4:3.1, 5:2.8, 6:2.5, 7:2.1, 8:0}})
 
-englishGpa={"H+":{1:4.4, 2:4.1, 3:3.8, 4:3.5, 5:3.2, 6:2.9, 7:2.5, 8:0},
-         "H":{1:4.3, 2:4.0, 3:3.7, 4:3.4, 5:3.1, 6:2.8, 7:2.4, 8:0},
-         "S+":{1:4.1, 2:3.8, 3:3.5, 4:3.2, 5:2.9, 6:2.6, 7:2.2, 8:0},
-         "S":{1:4.0, 2:3.7, 3:3.4, 4:3.1, 5:2.8, 6:2.5, 7:2.1, 8:0}}
+englishGpa=pd.DataFrame({"H+":{1:4.4, 2:4.1, 3:3.8, 4:3.5, 5:3.2, 6:2.9, 7:2.5, 8:0},
+                         "H":{1:4.3, 2:4.0, 3:3.7, 4:3.4, 5:3.1, 6:2.8, 7:2.4, 8:0},
+                         "S+":{1:4.1, 2:3.8, 3:3.5, 4:3.2, 5:2.9, 6:2.6, 7:2.2, 8:0},
+                         "S":{1:4.0, 2:3.7, 3:3.4, 4:3.1, 5:2.8, 6:2.5, 7:2.1, 8:0}})
 
-nonLanguageGpa={"H":{1:4.3, 2:4.0, 3:3.7, 4:3.4, 5:3.1, 6:2.8, 7:2.4, 8:0},
-             "S+":{1:4.15, 2:3.85, 3:3.55, 4:3.25, 5:2.95, 6:2.65, 7:2.25, 8:0},
-             "S":{1:4.0, 2:3.7, 3:3.4, 4:3.1, 5:2.8, 6:2.5, 7:2.1, 8:0}}
+nonLanguageGpa=pd.DataFrame({"H":{1:4.3, 2:4.0, 3:3.7, 4:3.4, 5:3.1, 6:2.8, 7:2.4, 8:0},
+                             "S+":{1:4.15, 2:3.85, 3:3.55, 4:3.25, 5:2.95, 6:2.65, 7:2.25, 8:0},
+                             "S":{1:4.0, 2:3.7, 3:3.4, 4:3.1, 5:2.8, 6:2.5, 7:2.1, 8:0}})
 
 #read info file
-file=open("GPA info.txt","r")
-info=file.readlines()
-file.close()
-for sbjNum in range(7):
-    info[sbjNum]=info[sbjNum].split("\t")
-    if info[sbjNum][3]=="":
-        del info[sbjNum][3]
-    for infoNum in range(4):
-        info[sbjNum][infoNum]=info[sbjNum][infoNum].split()[1]
+info=pd.read_excel("GPA info.xlsx",index_col=0)
 
-#input info into dictionary
-for i in range(len(info)):
-    sbjList.append(info[i][0])
-    level[sbjList[i]],score[sbjList[i]],credit[sbjList[i]]=info[i][1],float(info[i][2]),float(info[i][3])
+gpa=[]      #create gpa list
 
-#standardize level
-for i in range(len(sbjList)):
-    level[sbjList[i]]=stdLv(level[sbjList[i]])
+#standardize level and score
+for i in info.index:
+    info.loc[i,"level"]=stdLv(info.loc[i,"level"])
+    info.loc[i,"score"]=stdScr(info.loc[i,"score"])
+    gpa.append(findGpa(i,info.loc[i,"level"],info.loc[i,"score"]))
 
-#standardize score
-for i in range(len(sbjList)):
-    score[sbjList[i]]=stdScr(score[sbjList[i]])
-
-#find GPA for each subject
-for i in range(len(sbjList)):
-    gpa[sbjList[i]]=findGpa(sbjList[i],level[sbjList[i]],score[sbjList[i]])
+info.loc[:,"gpa"]=gpa      #input gpa into info dataframe
 
 #final result
 gpaSum=0
 creditSum=0
-for i in range(len(sbjList)):
-    gpaSum+=gpa[sbjList[i]]*credit[sbjList[i]]
-for i in range(len(sbjList)):
-    creditSum+=credit[sbjList[i]]
+for i in info.index:
+    gpaSum+=info.loc[i,"gpa"]*info.loc[i,"credit"]
+    creditSum+=info.loc[i,"credit"]
+
 gpa=gpaSum/creditSum
 gpa=int(gpa*1000)/1000
 print("Your GPA: "+str(gpa))
