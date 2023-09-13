@@ -6,6 +6,9 @@ from tkinter import filedialog
 from tkinter import ttk
 import time
 
+# TODO add comments
+# TODO extend to multi-grade
+# TODO find accurate class credits
 
 class InputError(Exception):
     def __init__(self, position, value):
@@ -13,53 +16,52 @@ class InputError(Exception):
         self.value = value
 
     def __str__(self):
-        return "{0}: {1} is invalid input".format(str(self.position), repr(self.value))
+        return "{0} at position {1} is invalid input".format(repr(self.value), str(self.position))
 
 
-def digitize_score(scr, sbj):
-    if 92.5 <= scr <= 100:
-        return 1
+def letter_grade(scr: int | float | str, sbj: str) -> str:
+    if 95.5 <= scr <= 100:
+        return 'A+'
+    elif scr >= 92.5:
+        return 'A'
     elif scr >= 87.5:
-        return 2
+        return 'A-'
     elif scr >= 82.5:
-        return 3
+        return 'B+'
     elif scr >= 77.5:
-        return 4
+        return 'B'
     elif scr >= 72.5:
-        return 5
+        return 'B-'
     elif scr >= 67.5:
-        return 6
+        return 'C+'
+    elif scr >= 61.5:
+        return 'C'
     elif scr >= 59.5:
-        return 7
-    elif 0 <= scr < 59.5:
-        return 8
+        return 'C-'
+    elif scr >= 0:
+        return 'F'
+    elif scr in non_language_gpa_table.index:
+        return scr
     else:
-        raise InputError(sbj + ' ' + 'score', scr)
+        raise InputError(f'{sbj} score', scr)
 
 
-def standardize_level(lv, sbj):
-    if sbj == 'Math' and (lv == 'HLM' or lv == '素养班'):
-        return 'H'
-    elif sbj == 'Chinese' and lv in chinese_sbj_list.keys():
-        return chinese_sbj_list[lv]
-
-    if sbj == 'Chinese' and lv not in chinese_gpa_df.keys():
+def check_level(lv: str, sbj: str):
+    if sbj == 'Chinese' and lv not in chinese_gpa_table.keys():
         raise InputError('Chinese level', lv)
-    elif sbj == 'English' and lv not in english_gpa_df.keys():
+    elif sbj == 'English' and lv not in english_gpa_table.keys():
         raise InputError('English level', lv)
-    elif sbj != 'Chinese' and sbj != 'English' and lv not in non_language_gpa_df.keys():
-        raise InputError(sbj + ' ' + 'level', lv)
-
-    return lv
+    elif sbj != 'Chinese' and sbj != 'English' and lv not in non_language_gpa_table.keys():
+        raise InputError(sbj + ' level', lv)
 
 
-def find_gpa(sbj, lv, scr):
+def find_subject_gpa(sbj, lv, scr):
     if sbj == 'Chinese':
-        return chinese_gpa_df[lv][scr]
+        return chinese_gpa_table[lv][scr]
     elif sbj == 'English':
-        return english_gpa_df[lv][scr]
+        return english_gpa_table[lv][scr]
     else:
-        return non_language_gpa_df[lv][scr]
+        return non_language_gpa_table[lv][scr]
 
 
 def open_input_file():
@@ -68,10 +70,9 @@ def open_input_file():
                                                  ('all files', '*.*')),
                                       defaultextension='.xlsx')
     input_filename_label.config(text='File opened: ' + path)
-    # noinspection PyArgumentList
     info = pd.read_excel(path, index_col=0)
-    for sbj in sbj_list:
-        for attr in attr_list:
+    for sbj in subjects:
+        for attr in attributes:
             if attr == 'level':
                 input_group.loc[sbj, attr].set(info.loc[sbj, attr].upper())
             else:
@@ -79,71 +80,59 @@ def open_input_file():
                 input_group.loc[sbj, attr].insert(0, info.loc[sbj, attr])
 
 
-def is_decimal(string):
-    if '.' in string:
-        if string.replace('.', '').isdigit():
-            return True
-    elif string.isdigit():
-        return True
-    return False
-
-
-def apply_for_element(func, array, *args, dtype=None, **kwargs):
-    result_array = np.array([], dtype=dtype)
-    df = pd.DataFrame(args).T
-    for i in range(len(array)):
-        if len(df.index) != 0:
-            current_args = tuple(df.iloc[i].values)
-            result_array = np.append(result_array, func(array[i], *current_args, **kwargs))
-        else:
-            result_array = np.append(result_array, func(array[i], *args, **kwargs))
-    return result_array
-
-
 def get_input():
-    info = pd.DataFrame({}, index=sbj_list, columns=attr_list)
+    info = pd.DataFrame({}, index=subjects, columns=attributes)
 
-    for sbj in sbj_list:
-        for attr in attr_list:
+    for sbj in subjects:
+        for attr in attributes:
             info.loc[sbj, attr] = input_group.loc[sbj, attr].get()
 
     return info
 
 
-def calculate_gpa_command():
+def calculate_gpa():
     info = get_input()
 
-    gpa_array = np.array([], dtype=float)
     try:
-        level_array = np.array(info.loc[:, 'level'])
-        score_array = np.array(info.loc[:, 'score'])
-        credit_array = np.array(info.loc[:, 'credit'])
+        levels = np.array(info.loc[:, 'level'])
+        scores = np.array(info.loc[:, 'score'])
+        credit_weights = np.array(info.loc[:, 'credit'])
 
-        apply_for_element(standardize_level, level_array, sbj_list)
+        for i in range(len(subjects)):
+            check_level(levels[i], subjects[i])
 
-        if np.all(apply_for_element(is_decimal, score_array)):
-            score_array = np.array(score_array, dtype=float)
-            score_array = apply_for_element(digitize_score, score_array, sbj_list)
-        else:
-            first_wrong_index = np.where(~ apply_for_element(is_decimal, score_array, dtype=bool))[0][0]
-            raise InputError(sbj_list[first_wrong_index] + ' ' + 'score', score_array[first_wrong_index])
+        try:
+            scores = np.array(scores, dtype=float)
+            scores = np.array([letter_grade(scores[i], subjects[i]) for i in range(len(scores))])
 
-        if np.all(apply_for_element(is_decimal, credit_array)):
-            credit_array = np.array(credit_array, dtype=float)
-        else:
-            first_wrong_index = np.where(~ apply_for_element(is_decimal, credit_array, dtype=bool))[0][0]
-            raise InputError(sbj_list[first_wrong_index] + ' ' + 'credit', credit_array[first_wrong_index])
+        except ValueError:
+            position = 0
+            for position in range(len(scores)):
+                if type(position) is not int and type(position) is not float:
+                    continue
+            raise InputError(f'{subjects[position]} score', scores[position])
 
-        gpa_array = apply_for_element(find_gpa, sbj_list, level_array, score_array)
+        try:
+            credit_weights = np.array(credit_weights, dtype=float)
 
-        gpa = np.round((np.dot(gpa_array, credit_array[:, np.newaxis]) / np.sum(credit_array))[0], 3)
+        except ValueError:
+            position = 0
+            for position in range(len(scores)):
+                if type(position) is not int and type(position) is not float:
+                    continue
+            raise InputError(f'{subjects[position]} credit', scores[position])
+
+        subject_gpa = np.array([find_subject_gpa(subjects[i], levels[i], scores[i])
+                                for i in range(len(subjects))])
+
+        gpa = np.round(sum(subject_gpa * credit_weights) / sum(credit_weights), 3)
         output_label.config(text='Your GPA: ' + str(gpa), foreground='black')
 
     except InputError as error:
         output_label.config(text=str(error), foreground='red')
 
 
-def save_input_command():
+def save_input():
     info = get_input()
     path = filedialog.asksaveasfilename(title='Save as Excel file',
                                         filetypes=(('Microsoft Excel', '*.xlsx'),
@@ -153,7 +142,7 @@ def save_input_command():
     save_input_label.config(text='Input saved at: ' + os.path.abspath(path))
 
 
-def save_gpa_command():
+def save_gpa():
     gpa = output_label['text'].split(': ')[1]
     t = time.strftime('%Y-%m-%d')
     content = t + ' GPA: ' + gpa
@@ -164,80 +153,89 @@ def save_gpa_command():
     save_gpa_label.config(text='GPA saved at: ' + os.path.abspath('GPA output.txt'))
 
 
-chinese_gpa_df = pd.DataFrame({'H': {1: 4.3, 2: 4.0, 3: 3.7, 4: 3.4, 5: 3.1, 6: 2.8, 7: 2.4, 8: 0},
-                               'S': {1: 4.2, 2: 3.9, 3: 3.6, 4: 3.3, 5: 3.0, 6: 2.7, 7: 2.3, 8: 0},
-                               'III': {1: 4.1, 2: 3.8, 3: 3.5, 4: 3.2, 5: 2.9, 6: 2.6, 7: 2.2, 8: 0},
-                               'I': {1: 4.0, 2: 3.7, 3: 3.4, 4: 3.1, 5: 2.8, 6: 2.5, 7: 2.1, 8: 0}})
+def complete_gpa_table(gpa_table):
+    digit_grade = {'A+': 0, 'A': 0, 'A-': 1, 'B+': 2, 'B': 3, 'B-': 4, 'C+': 5}
+    for grade in digit_grade.keys():
+        gpa_table.loc[grade] = gpa_table.iloc[0] - 0.3 * digit_grade[grade]
+    gpa_table.loc['C'] = gpa_table.loc['C-'] = gpa_table.iloc[0] - 1.9
+    gpa_table.loc['F'] = 0
 
-english_gpa_df = pd.DataFrame({'H+': {1: 4.4, 2: 4.1, 3: 3.8, 4: 3.5, 5: 3.2, 6: 2.9, 7: 2.5, 8: 0},
-                               'H': {1: 4.3, 2: 4.0, 3: 3.7, 4: 3.4, 5: 3.1, 6: 2.8, 7: 2.4, 8: 0},
-                               'S+': {1: 4.1, 2: 3.8, 3: 3.5, 4: 3.2, 5: 2.9, 6: 2.6, 7: 2.2, 8: 0},
-                               'S': {1: 4.0, 2: 3.7, 3: 3.4, 4: 3.1, 5: 2.8, 6: 2.5, 7: 2.1, 8: 0}})
+    return gpa_table
 
-non_language_gpa_df = pd.DataFrame({'H': {1: 4.3, 2: 4.0, 3: 3.7, 4: 3.4, 5: 3.1, 6: 2.8, 7: 2.4, 8: 0},
-                                    'S+': {1: 4.15, 2: 3.85, 3: 3.55, 4: 3.25, 5: 2.95, 6: 2.65, 7: 2.25, 8: 0},
-                                    'S': {1: 4.0, 2: 3.7, 3: 3.4, 4: 3.1, 5: 2.8, 6: 2.5, 7: 2.1, 8: 0}})
 
-sbj_list = ['Chinese', 'Math', 'English', 'History', 'Physics', 'Chemistry', 'Elective']
-attr_list = ['level', 'score', 'credit']
-chinese_sbj_list = {'I': 'I', 'II': 'I', 'III': 'III', 'IV': 'III', 'V': 'S', 'VI': 'S', 'VII': 'S', 'S': 'S', 'H': 'H'}
+chinese_gpa_table = complete_gpa_table(pd.DataFrame(
+    {'IB': 4.5, 'H+': 4.4, 'H': 4.3, 'S': 4.2, 'AP': 4.2, 'VII': 4.2, 'VI': 4.2, 'V': 4.2,
+     'IV': 4.1, 'III': 4.1, 'II': 4.0, 'I': 4.0}, index=['A+']))
+
+english_gpa_table = complete_gpa_table(pd.DataFrame(
+    {'IB': 4.5, 'AP': 4.5, 'H+': 4.4, 'H': 4.3, 'S+': 4.1, 'S': 4.0}, index=['A+']))
+
+non_language_gpa_table = complete_gpa_table(pd.DataFrame(
+    {'IB': 4.5, 'AP': 4.5, 'A-level': 4.5, 'H': 4.3, 'S+': 4.15, 'S': 4.0}, index=['A+']))
+
+subjects = ['Chinese', 'Math', 'English', 'History', 'Physics', 'Chemistry', 'Elective1',
+            'Elective2']
+
+attributes = ['level', 'score', 'credit']
 
 root = tk.Tk()
-root.geometry('590x340')
+root.geometry('590x400')
 root.title('GPA calculator')
 
 sbj_label_group = {}
 attr_label_group = {}
-input_group = pd.DataFrame({}, index=sbj_list,
-                           columns=attr_list)
+input_group = pd.DataFrame({}, index=subjects,
+                           columns=attributes)
 
-for i in range(len(attr_list)):
-    attr_label_group[attr_list[i]] = ttk.Label(root, text=attr_list[i])
-    attr_label_group[attr_list[i]].grid(row=0, column=i + 1, padx=5)
+for i in range(len(attributes)):
+    attr_label_group[attributes[i]] = ttk.Label(root, text=attributes[i])
+    attr_label_group[attributes[i]].grid(row=0, column=i + 1, padx=5)
 
-for i in range(len(sbj_list)):
-    sbj_label_group[sbj_list[i]] = ttk.Label(text=sbj_list[i])
-    sbj_label_group[sbj_list[i]].grid(row=i + 1, column=0)
-    for j in range(len(attr_list)):
-        if attr_list[j] == 'level':
-            if sbj_list[i] == 'Chinese':
-                input_group.loc['Chinese', 'level'] = ttk.Combobox(root, values=list(chinese_sbj_list.keys()))
-            elif sbj_list[i] == 'English':
-                input_group.loc['English', 'level'] = ttk.Combobox(root, values=list(english_gpa_df.columns))
-            elif sbj_list[i] == 'Math':
-                input_group.loc['Math', 'level'] = ttk.Combobox(root,
-                                                                values=list(non_language_gpa_df.columns + ['HLM']))
+for i in range(len(subjects)):
+    sbj_label_group[subjects[i]] = ttk.Label(text=subjects[i])
+    sbj_label_group[subjects[i]].grid(row=i + 1, column=0)
+    for j in range(len(attributes)):
+        if attributes[j] == 'level':
+            if subjects[i] == 'Chinese':
+                input_group.loc['Chinese', 'level'] = ttk.Combobox(root, values=list(
+                    chinese_gpa_table.columns))
+            elif subjects[i] == 'English':
+                input_group.loc['English', 'level'] = ttk.Combobox(root, values=list(
+                    english_gpa_table.columns))
+            elif subjects[i] == 'Math':
+                input_group.loc['Math', 'level'] = ttk.Combobox(root, values=list(
+                    non_language_gpa_table.columns))
             else:
-                input_group.loc[sbj_list[i], 'level'] = ttk.Combobox(root,
-                                                                     values=list(non_language_gpa_df.columns))
+                input_group.loc[subjects[i], 'level'] = ttk.Combobox(
+                    root, values=list(non_language_gpa_table.columns))
         else:
-            input_group.loc[sbj_list[i], attr_list[j]] = ttk.Entry(root)
+            input_group.loc[subjects[i], attributes[j]] = ttk.Entry(root)
 
-        input_group.loc[sbj_list[i], attr_list[j]].grid(row=i + 1, column=j + 1, padx=5, pady=2)
+        input_group.loc[subjects[i], attributes[j]].grid(row=i + 1, column=j + 1, padx=5, pady=2)
 
 open_input_file_button = ttk.Button(text='Browse files', command=open_input_file)
-open_input_file_button.grid(row=8, column=0, padx=5, pady=2)
+open_input_file_button.grid(row=len(subjects)+1, column=0, padx=5, pady=2)
 
 input_filename_label = ttk.Label(text='File opened: ')
-input_filename_label.grid(row=8, column=1, columnspan=10, sticky='w')
+input_filename_label.grid(row=len(subjects)+1, column=1, columnspan=10, sticky='w')
 
-calculate_gpa_button = ttk.Button(text='calculate', command=calculate_gpa_command)
-calculate_gpa_button.grid(row=9, column=0, padx=5, pady=2)
-root.bind('<Return>', lambda event: calculate_gpa_command())
+calculate_gpa_button = ttk.Button(text='calculate', command=calculate_gpa)
+calculate_gpa_button.grid(row=len(subjects)+2, column=0, padx=5, pady=2)
+root.bind('<Return>', lambda event: calculate_gpa())
 
 output_label = ttk.Label(text='Your GPA:')
-output_label.grid(row=9, column=1, columnspan=10, sticky='w')
+output_label.grid(row=len(subjects)+2, column=1, columnspan=10, sticky='w')
 
-save_input_button = ttk.Button(text='Save input', command=save_input_command)
-save_input_button.grid(row=10, column=0, padx=5, pady=2)
+save_input_button = ttk.Button(text='Save input', command=save_input)
+save_input_button.grid(row=len(subjects)+3, column=0, padx=5, pady=2)
 
 save_input_label = ttk.Label(text='Input saved at: ')
-save_input_label.grid(row=10, column=1, columnspan=10, sticky='w')
+save_input_label.grid(row=len(subjects)+3, column=1, columnspan=10, sticky='w')
 
-save_gpa_button = ttk.Button(text='Save GPA', command=save_gpa_command)
-save_gpa_button.grid(row=11, column=0, padx=5, pady=2)
+save_gpa_button = ttk.Button(text='Save GPA', command=save_gpa)
+save_gpa_button.grid(row=len(subjects)+4, column=0, padx=5, pady=2)
 
 save_gpa_label = ttk.Label(text='GPA saved at: ')
-save_gpa_label.grid(row=11, column=1, columnspan=10, sticky='w')
+save_gpa_label.grid(row=len(subjects)+4, column=1, columnspan=10, sticky='w')
 
 root.mainloop()
